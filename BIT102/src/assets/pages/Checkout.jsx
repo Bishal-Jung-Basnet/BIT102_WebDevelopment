@@ -61,9 +61,14 @@ export default function Checkout() {
     }, 1500);
   };
 
-  // Function to get game details
+  // Function to get game details by ID
+  const getGameDetails = (gameId) => {
+    return games.find(g => g.id === gameId) || null;
+  };
+
+  // Function to get game image
   const getGameImage = (gameId) => {
-    const game = games.find(g => g.id === gameId);
+    const game = getGameDetails(gameId);
     return game ? game.image : "/api/placeholder/400/320";
   };
 
@@ -73,7 +78,7 @@ export default function Checkout() {
     const time = new Date().toLocaleTimeString();
     
     let receiptContent = `
-NEXUS GAMING - PURCHASE RECEIPT
+gameBazar - PURCHASE RECEIPT
 ===============================
 Order ID: ${orderId}
 Date: ${date}
@@ -85,11 +90,15 @@ ITEMS PURCHASED:
 `;
 
     cartItems.forEach(item => {
+      const gameDetails = getGameDetails(item.id);
+      const gameTitle = gameDetails ? gameDetails.title : item.title;
+      const gamePrice = gameDetails ? gameDetails.price : item.price;
+      
       receiptContent += `
-- ${item.title} 
+- ${gameTitle} 
   Quantity: ${item.quantity} 
-  Price: Rs. ${item.price.toFixed(2)}
-  Subtotal: Rs. ${(item.price * item.quantity).toFixed(2)}
+  Price: Rs. ${gamePrice.toFixed(2)}
+  Subtotal: Rs. ${(gamePrice * item.quantity).toFixed(2)}
 `;
     });
 
@@ -101,19 +110,8 @@ TOTAL: Rs. ${total.toFixed(2)}
 
 Thank you for your purchase!
 Your games are now available in your library.
-For support, contact support@gamebazar.com
+For support, contact support@nexusgaming.com
 `;
-
-    // Create a blob and download link
-    const blob = new Blob([receiptContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${orderId}-receipt.txt`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
   };
 
   return (
@@ -254,7 +252,7 @@ For support, contact support@gamebazar.com
                             } focus:outline-none focus:ring-2 focus:ring-purple-500`}
                           >
                             <option value="">Select Country</option>
-                            <option value="India">Nepal</option>
+                            <option value="Nepal">Nepal</option>
                             <option value="United States">United States</option>
                             <option value="United Kingdom">United Kingdom</option>
                             <option value="Canada">Canada</option>
