@@ -29,7 +29,7 @@ export const CartProvider = ({ children }) => {
         };
         return updatedItems;
       } else {
-        // Item doesn't exist, add new item with quantity 1
+        // Item doesn't exist, add new item 
         return [...prevItems, { ...item, quantity: 1 }];
       }
     });

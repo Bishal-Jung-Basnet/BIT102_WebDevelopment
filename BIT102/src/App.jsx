@@ -8,11 +8,11 @@ import GameDetail from "./assets/pages/GameDetail";
 import Login from "./assets/pages/Login";
 import Signup from "./assets/pages/Signup";
 import Categories from "./assets/pages/Category";
-import Cart from "./assets/pages/Cart";  // Import the Cart component
+import Cart from "./assets/pages/Cart"; 
 import About from "./assets/pages/About";
 import Contact from "./assets/pages/Contact";
 import Footer from "./assets/components/Footer";
-import { Toaster } from "react-hot-toast";  // Optional for notifications
+import { Toaster } from "react-hot-toast";
 import Profile from "./assets/pages/profile";
 import Checkout from "./assets/pages/Checkout";
 

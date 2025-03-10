@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useTheme } from "../context/ThemeContext";
+import emailjs from "@emailjs/browser";
 
 export default function Contact() {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  const form = useRef();
   
   const [formData, setFormData] = useState({
     name: "",
@@ -12,7 +14,10 @@ export default function Contact() {
   });
   
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState({
+    success: false,
+    message: ""
+  });
   
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -26,24 +31,44 @@ export default function Contact() {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Simulate form submission
-    setTimeout(() => {
-      console.log("Form submitted:", formData);
-      setIsSubmitting(false);
-      setSubmitSuccess(true);
-      
-      // Reset form after submission
-      setFormData({
-        name: "",
-        email: "",
-        message: ""
+    // Initialize the service with your EmailJS credentials
+    // Replace these with your actual EmailJS service ID, template ID, and public key
+    const serviceID = "service_5qieh89";
+    const templateID = "template_fthnhr8";
+    const publicKey = "pOszfDQ1dqxkSQWRw";
+    
+    emailjs.sendForm(serviceID, templateID, form.current, publicKey)
+      .then((result) => {
+        console.log("Email sent successfully:", result.text);
+        setIsSubmitting(false);
+        setSubmitStatus({
+          success: true,
+          message: "Your message has been sent. We'll get back to you soon."
+        });
+        
+        // Reset form after submission
+        setFormData({
+          name: "",
+          email: "",
+          message: ""
+        });
+        
+        // Reset success message after 5 seconds
+        setTimeout(() => {
+          setSubmitStatus({
+            success: false,
+            message: ""
+          });
+        }, 5000);
+      })
+      .catch((error) => {
+        console.error("Failed to send email:", error.text);
+        setIsSubmitting(false);
+        setSubmitStatus({
+          success: false, 
+          message: "Failed to send your message. Please try again later."
+        });
       });
-      
-      // Reset success message after 3 seconds
-      setTimeout(() => {
-        setSubmitSuccess(false);
-      }, 3000);
-    }, 1000);
   };
   
   return (
@@ -53,14 +78,14 @@ export default function Contact() {
           Contact Us
         </h2>
         
-        {submitSuccess ? (
-          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
-            <strong className="font-bold">Success!</strong>
-            <span className="block sm:inline"> Your message has been sent. We'll get back to you soon.</span>
+        {submitStatus.message && (
+          <div className={`${submitStatus.success ? "bg-green-100 border-green-400 text-green-700" : "bg-red-100 border-red-400 text-red-700"} px-4 py-3 rounded relative mb-4 border`} role="alert">
+            <strong className="font-bold">{submitStatus.success ? "Success!" : "Error!"}</strong>
+            <span className="block sm:inline"> {submitStatus.message}</span>
           </div>
-        ) : null}
+        )}
         
-        <form onSubmit={handleSubmit}>
+        <form ref={form} onSubmit={handleSubmit}>
           <div className="mb-4">
             <label 
               htmlFor="name" 

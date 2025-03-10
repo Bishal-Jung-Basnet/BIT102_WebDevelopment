@@ -1,12 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { Search, Sun, Moon, Heart, User, ShoppingCart, Menu, X, ChevronDown } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import { useCart } from "../context/CartContext";
+import authService from "../services/authService"; // Add the missing import
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [categoriesOpen, setCategoriesOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === 'dark';
   const location = useLocation();
@@ -18,6 +21,27 @@ export default function Navbar() {
   // Get count of items in cart with a fallback
   const cartCount = typeof getCartCount === 'function' ? getCartCount() : 0;
 
+  // Check authentication status on component mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const authenticated = await authService.isAuthenticated();
+        setIsAuthenticated(authenticated);
+        
+        if (authenticated) {
+          const userData = await authService.getCurrentUser();
+          setCurrentUser(userData);
+        }
+      } catch (error) {
+        console.error("Authentication check failed:", error);
+        setIsAuthenticated(false);
+        setCurrentUser(null);
+      }
+    };
+
+    checkAuth();
+  }, [location.pathname]); // Re-check when route changes
+
   // Function to determine if a link is active
   const isActiveLink = (path) => {
     if (path === '/home' && (location.pathname === '/' || location.pathname === '/home')) {
@@ -26,17 +50,11 @@ export default function Navbar() {
     return location.pathname === path;
   };
 
-  // Here we need to handle the user authentication properly
-  // Since there's no useAuth defined in the imports but it's used in the code
+  // Handle user icon click based on authentication status
   const handleUserClick = () => {
-    // Check if user is logged in
-    const isLoggedIn = authService.isAuthenticated();
-    
-    if (isLoggedIn) {
-      // Redirect to profile if logged in
+    if (isAuthenticated) {
       navigate('/profile');
     } else {
-      // Redirect to login if not logged in
       navigate('/login');
     }
   };
@@ -153,10 +171,36 @@ export default function Navbar() {
           }
         </button>
         <Heart className={`w-5 h-5 ${isDark ? "text-gray-400 hover:text-white" : "text-gray-600 hover:text-gray-900"} cursor-pointer`} />
-        <User 
-          onClick={handleUserClick}
-          className={`w-5 h-5 ${isDark ? "text-gray-400 hover:text-white" : "text-gray-600 hover:text-gray-900"} cursor-pointer`} 
-        />
+        
+        {/* User icon/avatar section - shows different UI based on auth status */}
+        <div onClick={handleUserClick} className="cursor-pointer">
+          {isAuthenticated && currentUser ? (
+            <div className="relative group">
+              {/* User avatar if signed in */}
+              <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-white overflow-hidden">
+                {currentUser.profilePic ? (
+                  <img 
+                    src={currentUser.profilePic} 
+                    alt={currentUser.name} 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="font-medium text-sm">
+                    {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
+                  </span>
+                )}
+              </div>
+              
+              {/* Tooltip on hover */}
+              <div className="absolute hidden group-hover:block top-full right-0 mt-2 py-1 px-2 bg-gray-800 text-white text-xs rounded whitespace-nowrap">
+                {currentUser.name || 'Profile'}
+              </div>
+            </div>
+          ) : (
+            <User className={`w-5 h-5 ${isDark ? "text-gray-400 hover:text-white" : "text-gray-600 hover:text-gray-900"}`} />
+          )}
+        </div>
+        
         <div className="relative" onClick={navigateToCart}>
           <ShoppingCart className={`w-5 h-5 ${isDark ? "text-gray-400 hover:text-white" : "text-gray-600 hover:text-gray-900"} cursor-pointer`} />
           {cartCount > 0 && (
@@ -166,6 +210,8 @@ export default function Navbar() {
           )}
         </div>
       </div>
+      
+      {/* Mobile menu button */}
       <button 
         className="md:hidden focus:outline-none" 
         onClick={() => setMenuOpen(!menuOpen)}
@@ -176,6 +222,8 @@ export default function Navbar() {
           <Menu className={`w-6 h-6 ${isDark ? "text-white" : "text-gray-800"}`} />
         }
       </button>
+      
+      {/* Mobile menu */}
       <div className={`absolute top-16 left-0 w-full ${isDark ? "bg-[#050A18] text-white" : "bg-white text-gray-800"} flex flex-col items-center space-y-4 py-4 transition-all ${menuOpen ? "block" : "hidden"} md:hidden shadow-md`}>
         {[
           { name: "Home", path: "/home" },
@@ -206,9 +254,18 @@ export default function Navbar() {
             }
           </button>
           <Heart className={`w-5 h-5 ${isDark ? "text-gray-400 hover:text-white" : "text-gray-600 hover:text-gray-900"} cursor-pointer`} />
-          <button onClick={handleUserClick} className="focus:outline-none">
-            <User className={`w-5 h-5 ${isDark ? "text-gray-400 hover:text-white" : "text-gray-600 hover:text-gray-900"} cursor-pointer`} />
-          </button>
+          
+          {/* Mobile user icon/avatar */}
+          <div onClick={handleUserClick} className="cursor-pointer">
+            {isAuthenticated && currentUser ? (
+              <div className="w-5 h-5 rounded-full bg-purple-600 flex items-center justify-center text-white">
+                {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
+              </div>
+            ) : (
+              <User className={`w-5 h-5 ${isDark ? "text-gray-400 hover:text-white" : "text-gray-600 hover:text-gray-900"}`} />
+            )}
+          </div>
+          
           <div className="relative" onClick={navigateToCart}>
             <ShoppingCart className={`w-5 h-5 ${isDark ? "text-gray-400 hover:text-white" : "text-gray-600 hover:text-gray-900"} cursor-pointer`} />
             {cartCount > 0 && (
